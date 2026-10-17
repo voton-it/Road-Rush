@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Road Rush</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="A motorcycle combat racing game in the spirit of the early-90s classics: race, brawl and survive.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik+Dirt&family=Teko:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <canvas id="game" aria-label="Road Rush race view"></canvas>
+
+  <!-- touch controls (shown on touch screens during a race) -->
+  <div id="touch" hidden>
+    <div class="tc-left">
+      <button class="tc tc-steer" data-act="left" aria-label="Steer left">&#9664;</button>
+      <button class="tc tc-steer" data-act="right" aria-label="Steer right">&#9654;</button>
+    </div>
+    <div class="tc-right">
+      <button class="tc tc-small" data-act="hitL" aria-label="Punch left">L</button>
+      <button class="tc tc-small" data-act="kick" aria-label="Kick">KICK</button>
+      <button class="tc tc-small" data-act="hitR" aria-label="Punch right">R</button>
+      <button class="tc tc-small tc-nitro" data-act="nitro" aria-label="Nitro">N2O</button>
+      <button class="tc tc-brake" data-act="brake" aria-label="Brake">BRAKE</button>
+      <button class="tc tc-gas" data-act="gas" aria-label="Throttle">GAS</button>
+    </div>
+    <button class="tc tc-pause" data-act="pause" aria-label="Pause">II</button>
+  </div>
+
+  <!-- title -->
+  <section class="screen" id="scr-title" hidden>
+    <div class="title-wrap">
+      <div class="logo" aria-label="Road Rush">
+        <span class="logo-top">ROAD</span>
+        <span class="logo-bot">RUSH</span>
+      </div>
+      <p class="tagline">Race the highway. Brawl the pack. Get paid.</p>
+      <nav class="menu" aria-label="Main menu">
+        <button class="btn btn-primary" id="btn-continue">Continue career</button>
+        <button class="btn" id="btn-new">New career</button>
+        <button class="btn" id="btn-quick">Quick race</button>
+        <button class="btn btn-ghost" id="btn-help">How to play</button>
+      </nav>
+      <div class="sound-row">
+        <label class="toggle"><input type="checkbox" id="opt-sfx"> Sound effects</label>
+        <label class="toggle"><input type="checkbox" id="opt-music"> Music</label>
+      </div>
+    </div>
+    <p class="title-foot">Arrows steer &middot; Z / X punch &middot; C kick &middot; Space nitro &middot; Esc pause</p>
+  </section>
+
+  <!-- career hub -->
+  <section class="screen" id="scr-hub" hidden>
+    <div class="sheet">
+      <header class="sheet-head">
+        <div>
+          <p class="eyebrow" id="hub-level">Level 1</p>
+          <h1 class="h1">Pick your road</h1>
+          <p class="sub">Finish in the top 3 on all five roads to move up a level.</p>
+        </div>
+        <div class="stats">
+          <div class="stat"><span class="stat-k">Cash</span><span class="stat-v" id="hub-cash">$0</span></div>
+          <div class="stat"><span class="stat-k">Bike</span><span class="stat-v" id="hub-bike">-</span></div>
+          <div class="stat"><span class="stat-k">Qualified</span><span class="stat-v" id="hub-qual">0 / 5</span></div>
+        </div>
+      </header>
+      <div class="tracks" id="hub-tracks"></div>
+      <div class="row-actions">
+        <button class="btn btn-primary" id="hub-shop">Bike shop</button>
+        <button class="btn btn-ghost" id="hub-menu">Main menu</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- pre-race briefing -->
+  <section class="screen" id="scr-brief" hidden>
+    <div class="sheet sheet-narrow">
+      <p class="eyebrow" id="brief-eyebrow">Level 1 &middot; Race</p>
+      <h1 class="h1" id="brief-name">Pacific Coast</h1>
+      <p class="sub" id="brief-blurb"></p>
+      <dl class="facts" id="brief-facts"></dl>
+      <blockquote class="trash">
+        <p id="brief-quote"></p>
+        <footer id="brief-who"></footer>
+      </blockquote>
+      <div class="row-actions">
+        <button class="btn btn-primary" id="brief-go">Race</button>
+        <button class="btn btn-ghost" id="brief-back">Back</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- bike shop -->
+  <section class="screen" id="scr-shop" hidden>
+    <div class="sheet">
+      <header class="sheet-head">
+        <div>
+          <p class="eyebrow">Moto Mart</p>
+          <h1 class="h1">Bike shop</h1>
+          <p class="sub">Your current bike is traded in at half its price.</p>
+        </div>
+        <div class="stats">
+          <div class="stat"><span class="stat-k">Cash</span><span class="stat-v" id="shop-cash">$0</span></div>
+        </div>
+      </header>
+      <div class="bikes" id="shop-list"></div>
+      <div class="row-actions">
+        <button class="btn btn-ghost" id="shop-back">Back</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- quick race -->
+  <section class="screen" id="scr-quick" hidden>
+    <div class="sheet sheet-narrow">
+      <p class="eyebrow">Quick race</p>
+      <h1 class="h1">Any road, any bike</h1>
+      <p class="sub">No money on the line. Pick a road, a difficulty and a bike.</p>
+      <fieldset class="pick">
+        <legend>Road</legend>
+        <div class="chips" id="quick-track"></div>
+      </fieldset>
+      <fieldset class="pick">
+        <legend>Level</legend>
+        <div class="chips" id="quick-level"></div>
+      </fieldset>
+      <fieldset class="pick">
+        <legend>Bike</legend>
+        <div class="chips" id="quick-bike"></div>
+      </fieldset>
+      <div class="row-actions">
+        <button class="btn btn-primary" id="quick-go">Race</button>
+        <button class="btn btn-ghost" id="quick-back">Back</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- results -->
+  <section class="screen" id="scr-results" hidden>
+    <div class="sheet sheet-narrow">
+      <p class="eyebrow" id="res-eyebrow">Results</p>
+      <h1 class="h1 res-title" id="res-title">1st place</h1>
+      <p class="sub" id="res-sub"></p>
+      <div class="res-grid">
+        <ol class="standings" id="res-table"></ol>
+        <dl class="ledger" id="res-ledger"></dl>
+      </div>
+      <div class="row-actions">
+        <button class="btn btn-primary" id="res-continue">Continue</button>
+        <button class="btn btn-ghost" id="res-retry">Race again</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- level up / champion / game over notices -->
+  <section class="screen" id="scr-notice" hidden>
+    <div class="sheet sheet-narrow notice">
+      <p class="eyebrow" id="notice-eyebrow"></p>
+      <h1 class="h1" id="notice-title"></h1>
+      <p class="sub" id="notice-body"></p>
+      <div class="row-actions">
+        <button class="btn btn-primary" id="notice-ok">Continue</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- pause -->
+  <section class="screen screen-dim" id="scr-pause" hidden>
+    <div class="sheet sheet-tiny">
+      <h1 class="h1">Paused</h1>
+      <nav class="menu">
+        <button class="btn btn-primary" id="pause-resume">Resume</button>
+        <button class="btn" id="pause-restart">Restart race</button>
+        <button class="btn btn-ghost" id="pause-quit">Quit race</button>
+      </nav>
+      <div class="sound-row">
+        <label class="toggle"><input type="checkbox" id="opt-sfx2"> Sound effects</label>
+        <label class="toggle"><input type="checkbox" id="opt-music2"> Music</label>
+      </div>
+    </div>
+  </section>
+
+  <!-- how to play -->
+  <section class="screen" id="scr-help" hidden>
+    <div class="sheet sheet-narrow">
+      <p class="eyebrow">How to play</p>
+      <h1 class="h1">Rules of the road</h1>
+      <div class="help-grid">
+        <div>
+          <h2 class="h2">Controls</h2>
+          <dl class="keys">
+            <dt><kbd>&larr;</kbd><kbd>&rarr;</kbd> or <kbd>A</kbd><kbd>D</kbd></dt><dd>Steer</dd>
+            <dt><kbd>&uarr;</kbd> or <kbd>W</kbd></dt><dd>Throttle</dd>
+            <dt><kbd>&darr;</kbd> or <kbd>S</kbd></dt><dd>Brake</dd>
+            <dt><kbd>Z</kbd> or <kbd>J</kbd></dt><dd>Punch or swing left</dd>
+            <dt><kbd>X</kbd> or <kbd>K</kbd></dt><dd>Punch or swing right</dd>
+            <dt><kbd>C</kbd> or <kbd>L</kbd></dt><dd>Kick the nearest rider</dd>
+            <dt><kbd>Space</kbd></dt><dd>Nitro (superbikes only)</dd>
+            <dt><kbd>Esc</kbd> or <kbd>P</kbd></dt><dd>Pause</dd>
+          </dl>
+          <p class="note">Gamepads work too: stick to steer, triggers for gas and brake, face buttons to fight.</p>
+        </div>
+        <div>
+          <h2 class="h2">The race</h2>
+          <ul class="rules">
+            <li>Finish in the top 3 to qualify. Qualify on all five roads to reach the next level.</li>
+            <li>Every finish pays prize money, plus a bonus for each rider you knock off.</li>
+            <li>Ride up beside a rival and hit them until their bar empties. Knock off an armed rider while your hands are empty and you take their club or chain.</li>
+            <li>A kick does little damage but shoves a rider sideways, into traffic or off the road.</li>
+            <li>Crash too often and your bike is wrecked. You pay for repairs.</li>
+            <li>Cops chase anyone they see. Get caught on the ground near one and you pay a fine.</li>
+            <li>Run out of cash and your career is over.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="row-actions">
+        <button class="btn btn-primary" id="help-back">Got it</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="js/util.js"></script>
+<script src="js/data.js"></script>
+<script src="js/art.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/input.js"></script>
+<script src="js/track.js"></script>
+<script src="js/render.js"></script>
+<script src="js/game.js"></script>
+<script src="js/hud.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
